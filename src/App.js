@@ -5,14 +5,20 @@ import { ethers, Contract } from "ethers";
 import React, { useEffect, useState } from 'react';
 import { Button, TextField } from '@material-ui/core';
 
+
+
+import ColorPicker from './components/ColorPicker'
+
 const { abi } = require('./artifacts/contracts/PixelToken.json'); 
 
 function App() {
 
   const [pixel2Color, setPixel2Color] = useState(new Map());
-  const [pixelRInput, setPixelRInput] = useState(0);
-  const [pixelGInput, setPixelGInput] = useState(0);
-  const [pixelBInput, setPixelBInput] = useState(0);
+  // const [pixelRInput, setPixelRInput] = useState(0);
+  // const [pixelGInput, setPixelGInput] = useState(0);
+  // const [pixelBInput, setPixelBInput] = useState(0);
+
+  const [color, setColor] = useState('');
 
   const [logMessage, setLogMessage] = useState(''); 
   const [tokens, setTokens] = useState({});
@@ -56,8 +62,10 @@ function App() {
   }
 
   const getAllTokens = async () => {
+    console.log("GALL");
     const tokens = await contract.getAllTokens();
     setTokens(tokens);
+    console.log("set TOKENS");
   }
 
   const getMyTokens = async () => {
@@ -78,15 +86,16 @@ function App() {
     console.log(tokenId);
     const burnSuccess = await contract.burnToken(tokenId);
     if(burnSuccess){
-      console.log(pixelRInput, pixelGInput, pixelBInput);
+      console.log(color);
 
       setPixel2Color(new Map(
-        pixel2Color.set(tokenId, `${pixelRInput},${pixelGInput},${pixelBInput}`)
+        pixel2Color.set(tokenId, `rgba(${color['r']},${color['g']},${color['b']},${color['a']})`)
         ));
 
       console.log(pixel2Color);
 
-      getAllTokens();
+      await getAllTokens();
+      
     }
   }
 
@@ -137,7 +146,7 @@ function App() {
             <div key={rowId}>
               {row.map((node, nodeId) => {
                 return (
-                  <div key={node} style={{background:`rgb(${getPixel2ColorValue(node)})`}} className="node"></div>
+                  <div key={node} style={{background:`${getPixel2ColorValue(node)}`}} className="node"></div>
                 );
               })
             }
@@ -173,19 +182,27 @@ function App() {
 
 
               {owner === userAddress &&
-                <div>
+                <div style = {{marginLeft: 'auto', marginRight: 'auto', textAlign:'center'}}>
+                   <div>
+                   <ColorPicker changeColor={setColor}/>
+
                   <br />
 
-                  <span >Red </span>
-                  <TextField type = "text" onChange={(e) => setPixelRInput(e.target.value)}></TextField>
-                  <br />
-                  <span>Green</span>
-                  <TextField type = "text" onChange={(e) => setPixelGInput(e.target.value)}></TextField>
-                  <br />
-                  <span>Blue</span>
-                  <TextField type = "text" onChange={(e) => setPixelBInput(e.target.value)}></TextField>
-                  <br />
-                  <Button onClick = {() => burnToken(parseInt(tokenId._hex, 16))}>Burn Token</Button>
+                 
+                    <span style={{marginRight:'20px'}}>Red </span>
+                    <TextField type = "text" value={color['r']} /*onChange={(e) => setPixelRInput(e.target.value)}*/></TextField>
+                    <br />
+                    <span style={{marginRight:'20px'}}>Green</span>
+                    <TextField type = "text" value={color['g']}/*onChange={(e) => setPixelGInput(e.target.value)}*/></TextField>
+                    <br />
+                    <span style={{marginRight:'20px'}}>Blue</span>
+                    <TextField type = "text" value={color['b']}/*onChange={(e) => setPixelBInput(e.target.value)}*/></TextField>
+                    <br />
+                    <span style={{marginRight:'20px'}}>Alpha</span>
+                    <TextField type = "text" value={color['a']}/*onChange={(e) => setPixelBInput(e.target.value)}*/></TextField>
+                    <br />
+                    <Button onClick = {() => burnToken(parseInt(tokenId._hex, 16))}>Burn Token</Button>
+                  </div>
                 </div>
               } 
               
