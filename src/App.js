@@ -44,7 +44,7 @@ function App() {
 
       const signer = provider.getSigner();
 
-      const contract = new Contract('0x4C2805F2d78423907bB7DA38daFb506124F04EA5', abi, signer);
+      const contract = new Contract('0x9BF98C999718BB34bD4e2Da6dD02e8cfE295c198', abi, signer);
 
       resolve({contract});
 
@@ -94,7 +94,8 @@ function App() {
 
       console.log(pixel2Color);
 
-      await getAllTokens();
+      const myTokens = await contract.getMyTokens(); 
+      setTokens(myTokens); 
       
     }
   }

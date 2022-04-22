@@ -79,9 +79,6 @@ contract PixelToken is ERC721 {
             return false;
         }
 
-        _burn(_tokenId);
-        
-
         // Remove tokenId from tokenExists
         tokenExists[_tokenId] = false; 
         
@@ -102,6 +99,8 @@ contract PixelToken is ERC721 {
                 break;
             }
         }
+
+        _burn(_tokenId);
 
         return true;
     }
