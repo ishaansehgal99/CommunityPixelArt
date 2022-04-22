@@ -9,10 +9,18 @@ const { abi } = require('./artifacts/contracts/PixelToken.json');
 
 function App() {
 
-  const [pixelInput, setPixelInput] = useState('');
+  const [pixel2Color, setPixel2Color] = useState(new Map());
+  const [pixelRInput, setPixelRInput] = useState(0);
+  const [pixelGInput, setPixelGInput] = useState(0);
+  const [pixelBInput, setPixelBInput] = useState(0);
+
   const [logMessage, setLogMessage] = useState(''); 
   const [tokens, setTokens] = useState({});
   const [contract, setContract] = useState(''); 
+  const [userAddress, setUserAddress] = useState(''); 
+
+  const GRID_ROW_LENGTH = 10; 
+  const GRID_COL_LENGTH = 10;
 
   const initWeb3 = async () => {
     
@@ -30,17 +38,17 @@ function App() {
 
       const signer = provider.getSigner();
 
-      const contract = new Contract('0x5f3742Cc230e9F70f70Cf87569Bd4c8eBcFf87c6', abi, signer);
+      const contract = new Contract('0x4C2805F2d78423907bB7DA38daFb506124F04EA5', abi, signer);
 
       resolve({contract});
 
     }); 
   }
 
-  const mintToken = async (tokenName) => {
-    if(!tokenName) return;
-    contract.mintToken(tokenName).then((tx) => {
+  const mintToken = async () => {
+    contract.mintToken().then((tx) => {
       tx.wait().then(() => {
+        console.log("Token minted");
         setLogMessage('Token Minted');
       })
 
@@ -57,11 +65,56 @@ function App() {
     setTokens(myTokens); 
   }
 
+  const getUserAddress = async () => {
+    const address = await contract.getUserAddress();
+    setUserAddress(address); 
+  }
+
+  function getPixel2ColorValue(key) {
+    return pixel2Color.get(key) || "256,256,256";
+  }
+
+  const burnToken = async (tokenId) => {
+    console.log(tokenId);
+    const burnSuccess = await contract.burnToken(tokenId);
+    if(burnSuccess){
+      console.log(pixelRInput, pixelGInput, pixelBInput);
+
+      setPixel2Color(new Map(
+        pixel2Color.set(tokenId, `${pixelRInput},${pixelGInput},${pixelBInput}`)
+        ));
+
+      console.log(pixel2Color);
+
+      getAllTokens();
+    }
+  }
+
+  const createGrid = () => {
+      const grid = [];
+      const initColorMap = {}
+      for (let row = 0; row < GRID_ROW_LENGTH; row++) {
+        const currentRow = [];
+        for (let col = 0; col < GRID_COL_LENGTH; col++) {
+          const idx = row * GRID_ROW_LENGTH + col;
+          currentRow.push(idx);
+          // initColorMap[idx] = 'black'; 
+        }
+        grid.push(currentRow);
+      }
+      // console.log(initColorMap);
+      return grid;
+  }
+
   useEffect(() => {
     initWeb3().then(async ({contract}) => {
       setContract(contract); 
 
-      // getAllTokens();
+      // getUserAddress();
+      const address = await contract.getUserAddress();
+      setUserAddress(address); 
+
+       // getAllTokens();
       const tokens = await contract.getAllTokens();
       setTokens(tokens); 
 
@@ -78,12 +131,23 @@ function App() {
       <header className ="App-Header">
         <h1>Mint Pixel Token</h1> 
 
+        <div className="grid">
+        {createGrid().map((row, rowId) => {
+          return (
+            <div key={rowId}>
+              {row.map((node, nodeId) => {
+                return (
+                  <div key={node} style={{background:`rgb(${getPixel2ColorValue(node)})`}} className="node"></div>
+                );
+              })
+            }
+           </div>
+          )
+        })}
+        </div>
+
         <form>
-          <TextField type = "text" onChange={(e) => setPixelInput(e.target.value)}>
-
-          </TextField>
-
-          <Button onClick = {() => mintToken(pixelInput)}>Mint</Button>
+          <Button onClick = {() => mintToken()}>Mint Token</Button>
         </form>
 
         <br />
@@ -96,15 +160,34 @@ function App() {
 
         <br />
         <div>
-          {console.log(tokens)}
+          {console.log(tokens, userAddress)}
           {
-          tokens.length ? tokens.map(({ tokenId, tokenName, owner}, i) => (
+          tokens.length ? tokens.map(({tokenId, tokenName, owner}, i) => (
 
             <div key = {i} className = "token">
 
-              <div>Token Id: {tokenId}</div>
+              <br />
+              <div>Token Id: {parseInt(tokenId._hex, 16)}</div>
               <div>Token Name: {tokenName}</div>
               <p>Owner: {owner}</p>
+
+
+              {owner === userAddress &&
+                <div>
+                  <br />
+
+                  <span >Red </span>
+                  <TextField type = "text" onChange={(e) => setPixelRInput(e.target.value)}></TextField>
+                  <br />
+                  <span>Green</span>
+                  <TextField type = "text" onChange={(e) => setPixelGInput(e.target.value)}></TextField>
+                  <br />
+                  <span>Blue</span>
+                  <TextField type = "text" onChange={(e) => setPixelBInput(e.target.value)}></TextField>
+                  <br />
+                  <Button onClick = {() => burnToken(parseInt(tokenId._hex, 16))}>Burn Token</Button>
+                </div>
+              } 
               
 
             </div>  
